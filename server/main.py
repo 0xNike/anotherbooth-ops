@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import uuid
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -16,10 +18,28 @@ from server.state_machine import SessionState, SessionStateMachine
 configure_logging(log_dir=Path("logs"))
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Another Booth Ops")
 config = load_config()
 fsm = SessionStateMachine(config)
 cameras = {room_id: SimulatedCameraAdapter(room_id) for room_id in config.rooms}
+
+
+async def _retention_worker() -> None:
+    while True:
+        await asyncio.sleep(60)
+
+
+@contextlib.asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    retention_task = asyncio.create_task(_retention_worker())
+    try:
+        yield
+    finally:
+        retention_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await retention_task
+
+
+app = FastAPI(title="Another Booth Ops", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -61,19 +81,3 @@ async def ws_room(websocket: WebSocket, tablet_id: str) -> None:
             await websocket.send_json({"ack": True, "received": msg})
     except WebSocketDisconnect:
         logger.info("Tablet disconnected", extra={"event": "tablet_disconnect", "room_id": tablet_id, "result": "ok"})
-
-
-async def _retention_worker() -> None:
-    while True:
-        await asyncio.sleep(60)
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    app.state.retention_task = asyncio.create_task(_retention_worker())
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    task = app.state.retention_task
-    task.cancel()
