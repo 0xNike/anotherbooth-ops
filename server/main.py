@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
 
+from server.camera import SimulatedCameraAdapter
 from server.config import load_config
 from server.logging_setup import configure_logging
 from server.state_machine import SessionStateMachine
@@ -18,11 +19,34 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Another Booth Ops")
 config = load_config()
 fsm = SessionStateMachine(config)
+cameras: dict[str, SimulatedCameraAdapter] = {
+    room_id: SimulatedCameraAdapter(room_id) for room_id in config.rooms
+}
 
 
 @app.get("/health")
 async def health() -> JSONResponse:
     return JSONResponse({"status": "ok", "profile": config.profile})
+
+
+@app.get("/admin/status")
+async def admin_status() -> JSONResponse:
+    camera_health: dict[str, dict[str, object]] = {}
+    for room_id, adapter in cameras.items():
+        h = await adapter.health_check()
+        camera_health[room_id] = {
+            "status": h.status.value,
+            "last_error": h.last_error,
+            "consecutive_failures": h.consecutive_failures,
+        }
+    return JSONResponse(
+        {
+            "profile": config.profile,
+            "session_state": fsm.ctx.current_state.value,
+            "session_id": fsm.ctx.session_id,
+            "camera_health": camera_health,
+        }
+    )
 
 
 @app.post("/admin/session/start")
