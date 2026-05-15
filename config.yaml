@@ -1,0 +1,51 @@
+profile: dev_single_cam
+
+timing:
+  room_intro: 4
+  countdown_per_shot: 5
+  interval_between_shots: 2
+  transit_time: 45
+  shots_per_room: 3
+
+rooms:
+  R2:
+    name: "Newspaper Graffiti"
+    camera_ip: "192.168.1.101"
+    tablet_id: "tablet-r2"
+    lens: "8mm_fisheye"
+    apply_barrel_distortion: false
+    simulated_capture: false
+  R3:
+    name: "Fridge POV"
+    camera_ip: "192.168.1.102"
+    tablet_id: "tablet-r3"
+    lens: "24mm"
+    apply_barrel_distortion: false
+    simulated_capture: true
+  R4:
+    name: "Baseball Court"
+    camera_ip: "192.168.1.103"
+    tablet_id: "tablet-r4"
+    lens: "18-45mm"
+    apply_barrel_distortion: false
+    simulated_capture: true
+  R5:
+    name: "Izakaya"
+    camera_ip: "192.168.1.104"
+    tablet_id: "tablet-r5"
+    lens: "18-45mm"
+    apply_barrel_distortion: false
+    simulated_capture: true
+
+printer:
+  name: "DNP DS-RX1HS"
+  paper_size: "4x6"
+
+network:
+  server_host: "0.0.0.0"
+  server_port: 8000
+  websocket_path: "/ws"
+
+retention:
+  keep_days: 7
+  purge_time_utc: "03:00"
