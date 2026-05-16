@@ -25,8 +25,13 @@ Proceed to next feature work only when **all four** of these pass:
 
 ## Current scope
 
-- FastAPI app with `/health` and `/admin/status` (returns per-room `camera_health`)
-- Session state machine skeleton for room progression
+- FastAPI app:
+  - `GET /health`, `GET /admin/status` (per-room `camera_health` + live session state)
+  - `POST /admin/session/start` / `POST /admin/session/advance` — drive the room state machine
+  - `POST /admin/session/capture` — capture the current room via its camera adapter
+  - `GET /admin/session/{id}/manifest` — captured files per room for a session
+- Session state machine skeleton for room progression (`IDLE → R2…R5 → SELECTING → PRINTING`)
+- `CaptureService` (`server/capture.py`) — ties session state → camera adapter → per-session file manifest; shoots `timing.shots_per_room` frames per room
 - WebSocket endpoint for tablet client ack testing
 - Config loading from `config.yaml`
 - Structured JSON logging setup
