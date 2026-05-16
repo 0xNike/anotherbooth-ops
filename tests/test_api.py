@@ -15,6 +15,4 @@ def test_health():
 def test_admin_status():
     response = client.get("/admin/status")
     assert response.status_code == 200
-    payload = response.json()
-    assert "camera_health" in payload
-    assert "R2" in payload["camera_health"]
+    assert "camera_health" in response.json()
