@@ -103,6 +103,18 @@ class CaptureService:
         )
         return capture
 
+    def frames(self, session_id: str) -> list[dict[str, str]]:
+        """Flatten a session's captures into individually addressable frames.
+
+        Each frame gets a stable `frame_id` (`<room>-<n>`) so downstream
+        selection/printing can reference a specific shot.
+        """
+        out: list[dict[str, str]] = []
+        for room_id, rc in self._manifests.get(session_id, {}).items():
+            for n, file in enumerate(rc.files, start=1):
+                out.append({"frame_id": f"{room_id}-{n}", "room_id": room_id, "file": file})
+        return out
+
     def manifest(self, session_id: str) -> dict[str, dict[str, object]]:
         """Return the per-room capture summary for a session (empty dict if none)."""
         rooms = self._manifests.get(session_id, {})
